@@ -1,5 +1,5 @@
 .idea
-.node_modules
+.node_modules/
 repl_history
 # Output of 'npm pack'
 *.tgz
