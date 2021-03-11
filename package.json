@@ -16,5 +16,10 @@
   "bugs": {
     "url": "https://github.com/kshshe/ScheduleKshsheBot/issues"
   },
-  "homepage": "https://github.com/kshshe/ScheduleKshsheBot#readme"
+  "homepage": "https://github.com/kshshe/ScheduleKshsheBot#readme",
+  "dependencies": {
+    "cron": "^1.8.2",
+    "node-persist": "^3.1.0",
+    "telegraf": "^4.2.1"
+  }
 }
