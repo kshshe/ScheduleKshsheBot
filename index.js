@@ -3,7 +3,7 @@ const CronJob = require("cron").CronJob;
 const storage = require("node-persist");
 
 const bot = new Telegraf("1647776734:AAEWWXkR9oVcsvPFc9D5yAPv9O6kiyuB5YM");
-const regex = /^(\d\d:\d\d)\s+(.*)$/;
+const regex = /^(\d\d:\d\d):?\s+(.*)$/;
 
 const HELP_TEXT = `Пришлите расписание в таком формате:
 
@@ -12,15 +12,19 @@ const HELP_TEXT = `Пришлите расписание в таком форм�
 14:30 Обед
 19:00 Ужин`;
 
-bot.start(Telegraf.reply(HELP_TEXT));
-bot.help(Telegraf.reply(HELP_TEXT));
+const formatScheduleText = (schedule) =>
+  Object.entries(schedule)
+    .map(([key, value]) => `*${key}*: ${value}`)
+    .join("\n");
 
-const tg = { current: null };
-
-bot.on("message", (ctx) => {
+bot.use((ctx, next) => {
   if (!tg.current) {
     ctx.reply("Бот запущен");
     ctx.telegram.setMyCommands([
+      {
+        command: "me",
+        description: "Посмотреть сохраненное расписание",
+      },
       {
         command: "help",
         description: "Помощь",
@@ -28,6 +32,25 @@ bot.on("message", (ctx) => {
     ]);
   }
   tg.current = ctx.telegram;
+  next();
+});
+
+bot.start(Telegraf.reply(HELP_TEXT));
+bot.help(Telegraf.reply(HELP_TEXT));
+bot.command("me", async (ctx) => {
+  const data = await storage.getItem(`${ctx.chat.id}`);
+  if (data && data.schedule) {
+    ctx.reply(formatScheduleText(data.schedule), {
+      parse_mode: "Markdown",
+    });
+  } else {
+    ctx.reply(HELP_TEXT);
+  }
+});
+
+const tg = { current: null };
+
+bot.on("message", (ctx) => {
   if (ctx.message.text) {
     const { text } = ctx.message;
     const lines = text
@@ -52,18 +75,16 @@ bot.on("message", (ctx) => {
 
     if (Object.keys(schedule).length === 0) {
       ctx.reply(HELP_TEXT);
-    } else {
-      ctx.reply(
-        `*Расписание сохранено*
-
-${Object.entries(schedule)
-  .map(([key, value]) => `*${key}* => ${value}`)
-  .join("\n")}`,
-        {
-          parse_mode: "Markdown",
-        }
-      );
     }
+
+    ctx.reply(
+      `*Расписание сохранено*
+
+${formatScheduleText(schedule)}`,
+      {
+        parse_mode: "Markdown",
+      }
+    );
   }
 });
 
