@@ -1,5 +1,6 @@
 .idea
-.node_repl_history
+.node_modules
+repl_history
 # Output of 'npm pack'
 *.tgz
 # Yarn Integrity file
