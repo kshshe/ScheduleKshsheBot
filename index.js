@@ -3,10 +3,11 @@ const CronJob = require("cron").CronJob;
 const storage = require("node-persist");
 
 const bot = new Telegraf("1647776734:AAEWWXkR9oVcsvPFc9D5yAPv9O6kiyuB5YM");
-const regex = /^(\d{1,2}:\d\d)\s+(.*)$/;
+const regex = /^(\d\d:\d\d)\s+(.*)$/;
 
 const HELP_TEXT = `Пришлите расписание в таком формате:
 
+08:30 Пробуждение
 10:30 Завтрак
 14:30 Обед
 19:00 Ужин`;
