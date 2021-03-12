@@ -1,4 +1,4 @@
-const { Telegraf } = require("telegraf");
+const { Telegraf, Markup } = require("telegraf");
 const CronJob = require("cron").CronJob;
 const storage = require("node-persist");
 
@@ -11,6 +11,12 @@ const HELP_TEXT = `Пришлите расписание в таком форм�
 10:30 Завтрак
 14:30 Обед
 19:00 Ужин`;
+
+const CHECKED = "✅";
+const UNCHECKED = "☑️";
+
+const capitalizeFirstLetter = (string) =>
+  `${string[0].toUpperCase()}${string.slice(1)}`;
 
 const formatScheduleText = (schedule) =>
   Object.entries(schedule)
@@ -49,6 +55,31 @@ bot.command("me", async (ctx) => {
 });
 
 const tg = { current: null };
+
+bot.on("callback_query", (ctx) => {
+  ctx.answerCbQuery();
+  const type = ctx.callbackQuery.data;
+  if (type === "all") {
+    ctx.deleteMessage();
+  } else {
+    const keyboard = ctx.callbackQuery.message.reply_markup.inline_keyboard;
+    keyboard[0] = keyboard[0].map((item) => {
+      if (item.callback_data !== type) {
+        return item;
+      }
+      const from = item.text.includes(CHECKED) ? CHECKED : UNCHECKED;
+      const to = from === CHECKED ? UNCHECKED : CHECKED;
+      return {
+        ...item,
+        text: item.text.split(from).join(to),
+      };
+    });
+    if (keyboard[0].every((item) => item.text.includes(CHECKED))) {
+      return ctx.deleteMessage();
+    }
+    ctx.editMessageReplyMarkup({ inline_keyboard: keyboard });
+  }
+});
 
 bot.on("message", (ctx) => {
   if (ctx.message.text) {
@@ -103,11 +134,29 @@ const job = new CronJob(
     const values = await storage.values();
     for (const { chatId, schedule } of values) {
       if (schedule[time]) {
-        console.log(`${chatId} => ${schedule[time]}`);
+        const task = schedule[time];
+        const taskParts = task
+          .split(/,|\sи\s/)
+          .map((part) => part.trim())
+          .filter(Boolean)
+          .map(capitalizeFirstLetter);
+        console.log(`${chatId} => ${task}`);
         tg.current.sendMessage(
           chatId,
-          `На *${time}* у вас запланировано *${schedule[time]}*`,
-          { parse_mode: "Markdown" }
+          `На *${time}* у вас запланировано *${task}*`,
+          {
+            ...Markup.inlineKeyboard([
+              taskParts.map((part) =>
+                Markup.button.callback(
+                  `${UNCHECKED} ${part}`,
+                  part,
+                  taskParts.length <= 1
+                )
+              ),
+              [Markup.button.callback(`Все сделано`, "all")],
+            ]),
+            parse_mode: "Markdown",
+          }
         );
       }
     }
