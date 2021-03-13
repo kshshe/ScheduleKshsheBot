@@ -59,26 +59,22 @@ const tg = { current: null };
 bot.on("callback_query", (ctx) => {
   ctx.answerCbQuery();
   const type = ctx.callbackQuery.data;
-  if (type === "all") {
-    ctx.deleteMessage();
-  } else {
-    const keyboard = ctx.callbackQuery.message.reply_markup.inline_keyboard;
-    keyboard[0] = keyboard[0].map((item) => {
-      if (item.callback_data !== type) {
-        return item;
-      }
-      const from = item.text.includes(CHECKED) ? CHECKED : UNCHECKED;
-      const to = from === CHECKED ? UNCHECKED : CHECKED;
-      return {
-        ...item,
-        text: item.text.split(from).join(to),
-      };
-    });
-    if (keyboard[0].every((item) => item.text.includes(CHECKED))) {
-      return ctx.deleteMessage();
+  const keyboard = ctx.callbackQuery.message.reply_markup.inline_keyboard;
+  keyboard[0] = keyboard[0].map((item) => {
+    if (item.callback_data !== type) {
+      return item;
     }
-    ctx.editMessageReplyMarkup({ inline_keyboard: keyboard });
+    const from = item.text.includes(CHECKED) ? CHECKED : UNCHECKED;
+    const to = from === CHECKED ? UNCHECKED : CHECKED;
+    return {
+      ...item,
+      text: item.text.split(from).join(to),
+    };
+  });
+  if (keyboard[0].every((item) => item.text.includes(CHECKED))) {
+    return ctx.deleteMessage();
   }
+  ctx.editMessageReplyMarkup({ inline_keyboard: keyboard });
 });
 
 bot.on("message", (ctx) => {
@@ -145,16 +141,11 @@ const job = new CronJob(
           chatId,
           `На *${time}* у вас запланировано *${task}*`,
           {
-            ...Markup.inlineKeyboard([
+            ...Markup.inlineKeyboard(
               taskParts.map((part) =>
-                Markup.button.callback(
-                  `${UNCHECKED} ${part}`,
-                  part,
-                  taskParts.length <= 1
-                )
-              ),
-              [Markup.button.callback(`Все сделано`, "all")],
-            ]),
+                Markup.button.callback(`${UNCHECKED} ${part}`, part)
+              )
+            ),
             parse_mode: "Markdown",
           }
         );
