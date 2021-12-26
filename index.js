@@ -23,6 +23,8 @@ const formatScheduleText = (schedule) =>
     .map(([key, value]) => `*${key}*: ${value}`)
     .join("\n");
 
+bot.catch(console.log);
+
 bot.use((ctx, next) => {
   if (!tg.current) {
     ctx.reply("Бот запущен");
